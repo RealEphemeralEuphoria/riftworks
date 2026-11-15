@@ -1,0 +1,33 @@
+services:
+  bot:
+    image: ghcr.io/realephemeraleuphoria/riftworks-bot:dev
+    container_name: riftworks-bot-dev
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "127.0.0.1:18081:8080"
+    labels:
+      # Opt in to updates, but only from the updater with the same scope.
+      # https://github.com/nicholas-fedor/watchtower/blob/main/docs/configuration/container-selection/index.md
+      - com.centurylinklabs.watchtower.enable=true
+      - com.centurylinklabs.watchtower.scope=riftworks-dev
+
+  updater:
+    # Maintained fork of Watchtower (the original was archived in Dec 2025). Pinned.
+    # https://github.com/nicholas-fedor/watchtower
+    image: nickfedor/watchtower:1.24.0
+    container_name: riftworks-updater-dev
+    restart: unless-stopped
+    environment:
+      WATCHTOWER_LABEL_ENABLE: "true"
+      WATCHTOWER_NO_STARTUP_MESSAGE: "true"
+      WATCHTOWER_SCOPE: riftworks-dev
+      WATCHTOWER_POLL_INTERVAL: "120"
+      WATCHTOWER_CLEANUP: "true"
+      WATCHTOWER_NOTIFICATIONS_HOSTNAME: riftworks-dev
+      # https://github.com/nicholas-fedor/watchtower/blob/main/docs/configuration/notifications/index.md
+      WATCHTOWER_NOTIFICATION_URL: ${WATCHTOWER_NOTIFICATION_URL}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    labels:
+      - com.centurylinklabs.watchtower.scope=riftworks-dev
