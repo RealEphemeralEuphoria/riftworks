@@ -1,3 +1,7 @@
+# REFERENCE COPY. Not applied automatically.
+# The live file is ~/services/riftworks-dev/docker-compose.yml on the server.
+# To change the server: edit it there, run `docker compose up -d`, then update this copy in a PR.
+
 services:
   bot:
     image: ghcr.io/realephemeraleuphoria/riftworks-bot:dev
