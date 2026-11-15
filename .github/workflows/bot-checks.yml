@@ -1,0 +1,23 @@
+name: bot checks
+
+on:
+  pull_request:
+    paths:
+      - "bot/**"
+      - ".github/workflows/bot-checks.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: bot
+          push: false
