@@ -20,7 +20,7 @@ jobs:
   dev:
     runs-on: ubuntu-latest
     environment: dev
-    # GITHUB_TOKEN may read code and upload packages, nothing else.
+    # GITHUB_TOKEN may read code and upload packages.
     # https://docs.github.com/en/actions/concepts/security/github_token
     permissions:
       contents: read
@@ -69,6 +69,22 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      # Posts to this environment's #dev-log. DEPLOY_WEBHOOK comes from the
+      # job's environment (dev or prod), so the same step goes to different servers.
+      # https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/use-secrets
+      # &notify-discord labels this step so prod can reuse it (YAML anchor):
+      # https://github.blog/changelog/2025-09-18-actions-yaml-anchors-and-non-public-workflow-templates/
+      - &notify-discord
+        name: Tell Discord
+        env:
+          WEBHOOK: ${{ secrets.DEPLOY_WEBHOOK }}
+          ENVIRONMENT: ${{ github.job }}
+          COMMIT_URL: ${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}
+        run: |
+          curl -fsS -H "Content-Type: application/json" \
+            -d "{\"content\": \"**${ENVIRONMENT}** now has \`sha-${GITHUB_SHA::7}\` ([commit](${COMMIT_URL}))\"}" \
+            "$WEBHOOK"
+
   prod:
     # Waits for the dev job. See "jobs.<job_id>.needs".
     needs: dev
@@ -95,3 +111,6 @@ jobs:
       # https://docs.docker.com/reference/cli/docker/buildx/imagetools/create/
       - name: Promote the dev image to latest
         run: docker buildx imagetools create -t ${{ env.IMAGE }}:latest ${{ env.IMAGE }}@${{ needs.dev.outputs.digest }}
+
+      # Same notify step as dev (YAML anchor), posting to prod's #dev-log.
+      - *notify-discord
